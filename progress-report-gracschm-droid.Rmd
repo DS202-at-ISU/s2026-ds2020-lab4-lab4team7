@@ -6,9 +6,56 @@ date: "2026-04-29"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(Lahman)
+library(rvest)
+library(tidyverse)
+head(HallOfFame)
+str(HallOfFame)
+View(HallOfFame)
 ```
 
 ## R Markdown
+
+```{r}
+library(rvest)
+
+url <- "https://www.baseball-reference.com/awards/hof_2026.shtml"
+page <- read_html(url)
+
+tables <- html_table(page, fill = TRUE)
+length(tables)
+head(tables[[1]])
+head(tables[[2]])
+```
+
+Filer 2026 Data 
+```{r}
+hof_2026 <- subset(HallOfFame, yearID == 2026)
+head(hof_2026)
+```
+
+```{r}
+url <- "https://www.baseball-reference.com/awards/hof_2026.shtml"
+page <- read_html(url)
+
+tables <- html_table(page, fill = TRUE)
+
+length(tables)
+head(tables[[1]])
+```
+
+```{r}
+data <- tables[[1]]
+actual_col_names <- data[1, ]
+colnames(data) <- actual_col_names
+data <- data[-1, ]
+data<-data|> select(Name, Votes,`%vote`) |> mutate(Year=2026,Inducted=ifelse(parse_number(`%vote`)>=75, 'Yes','No'))
+head(data, 3)
+```
+
+```{r}
+write.csv(data, file="hall of fame_ 2026-file.csv", row.names = FALSE)
+```
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
