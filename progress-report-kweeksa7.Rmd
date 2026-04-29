@@ -9,3 +9,54 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+library(rvest)
+url <- "https://baseball-reference.com/awards/hof_2026.shtml"
+html <- read_html(url)
+htmlTables <- html %>% html_table(fill=TRUE)
+bbWriters <- htmlTables[[1]]
+# bbWriters |> View()
+```
+
+```{r}
+# install.packages("Lahman")
+library(Lahman)
+# HallOfFame |> View()
+```
+
+```{r}
+actual_col_names <- bbWriters[1, ]
+#actual_col_names
+
+colnames(bbWriters) <- actual_col_names
+
+bbWriters <- bbWriters[-1, ]
+# bbWriters |> View()
+```
+
+```{r}
+hof2026 <- bbWriters |> select(Name, Votes, `%vote`) |> mutate(yearID = 2026, Name = gsub("^X-", "", Name), Votes = as.numeric(Votes), percentVote = readr::parse_number(`%vote`), inducted = ifelse(percentVote >= 75, "Y", "N")) |> select(candidateName = Name, yearID, votes = Votes, percentVote, inducted)
+head(hof2026)
+# View(hof2026)
+```
+
+```{r}
+lahman2026 <- HallOfFame |> filter(yearID == 2026)
+head(lahman2026)
+# View(lahman2026)
+```
+
+```{r}
+lahman2026 |> count(votedBy, inducted)
+hof2026 |> count(inducted)
+```
+
+```{r}
+readr::write_csv(hof2026, "HallOfFame_2026.csv")
+```
+
