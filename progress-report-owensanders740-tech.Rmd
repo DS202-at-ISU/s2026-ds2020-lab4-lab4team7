@@ -1,0 +1,56 @@
+---
+title: "progress-report-owensanders740-tech"
+author: "Owen Sanders"
+date: "2026-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rvest)
+library(Lahman)
+library(janitor)
+```
+
+
+```{r}
+# 1. Scrape
+url <- "https://www.baseball-reference.com/awards/hof_2026.shtml"
+page <- read_html(url)
+
+hof_table_raw <- page %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
+  html_table(fill = TRUE)
+
+# 2. Clean
+hof_final <- hof_table_raw %>%
+  janitor::row_to_names(row_number = 1) %>% 
+  select(temp_name = 2, temp_votes = 4, temp_pct = 5) %>%
+  # Remove the header row
+  filter(temp_name != "Name") %>%
+  transmute(
+    name = gsub("X-", "", temp_name),
+    yearID = 2026,
+    votes = as.numeric(temp_votes),
+    percent_vote = readr::parse_number(temp_pct),
+    inducted = ifelse(percent_vote >= 75, "Y", "N")
+  ) %>%
+  # Remove empty rows
+  filter(!is.na(votes))
+
+# Verify count
+print(paste("Rows found:", nrow(hof_final))) # Should be 27
+
+write_csv(hof_final, "HallOfFame_2026.csv", col_names = FALSE)
+```
+
+```{r}
+HallOfFame %>%
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2026))
+```
+
